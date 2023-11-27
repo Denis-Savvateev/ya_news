@@ -2,11 +2,13 @@
 
 from datetime import datetime, timedelta
 
+from django.conf import settings
+from django.urls import reverse
+from django.utils import timezone
 import pytest
 
-from django.conf import settings
-from django.utils import timezone
 from news.models import Comment, News
+from news.pytest_tests.const import COMMENT_TEXT
 
 
 @pytest.fixture
@@ -66,7 +68,7 @@ def comment(news, author):
     comment = Comment.objects.create(
         news=news,
         author=author,
-        text='Комментарий',
+        text=COMMENT_TEXT,
     )
     return comment
 
@@ -91,7 +93,29 @@ def news_id(news):
     return news.id,
 
 
-# @pytest.fixture
-# def comment_id(comment):
-#     """Верни параметр id для записи комментария."""
-#     return comment.id,
+@pytest.fixture
+def news_url(news):
+    """Верни url новости."""
+    news_url = reverse('news:detail', args=(news.id,))
+    return news_url
+
+
+@pytest.fixture
+def edit_url(comment):
+    """Верни url редактирования комментария."""
+    edit_url = reverse('news:edit', args=(comment.id,))
+    return edit_url
+
+
+@pytest.fixture
+def delete_url(comment):
+    """Верни url удаления комментария."""
+    delete_url = reverse('news:delete', args=(comment.id,))
+    return delete_url
+
+
+@pytest.fixture
+def url_to_comments(news_url):
+    """Верни url комментария."""
+    url_to_comments = news_url + '#comments'
+    return url_to_comments
