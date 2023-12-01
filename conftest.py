@@ -1,8 +1,10 @@
 """Фикстуры для пакета pytest."""
 
 from datetime import datetime, timedelta
+from random import sample
 
 from django.conf import settings
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 import pytest
@@ -12,10 +14,9 @@ from news.pytest_tests.const import COMMENT_TEXT
 
 
 @pytest.fixture
-def news_client(client):
+def client():
     """Создай фикстуру тестового клиента."""
-    news_client = client()
-    return news_client
+    return Client()
 
 
 @pytest.fixture
@@ -33,14 +34,6 @@ def reader(django_user_model):
 @pytest.fixture
 def author_client(author, client):
     """Создай фикстуру клиента, авторизованного для пользователя автора."""
-    """
-    Для уважаемого ревьюера (1 из 3)
-    Дмитрий, вы написали:
-    'Не надо мутировать глобальный клиент, создаём новый'
-    Я не смог переопределить клиента. Да и в теории нас учили именно такому
-    способу создания клиента пользователя. Прошу подсказать, что вы имели ввиду
-    и где это искать?
-    """
     client.force_login(author)
     return client
 
@@ -65,21 +58,16 @@ def news():
 @pytest.fixture
 def many_news():
     """Создай несколько записей новостей в базе данных."""
-    """
-    Для уважаемого ревьюера (2 из 3)
-    Дмитрий, вы написали:
-    'Долго создаётся, тут можно одним запросом по bulk_create'
-    Но, ведь, я же bulk_create и использовал? Вроде 11 разных записей
-    создал, и, вроде, одним запросом?
-    """
+    title_indexes = sample(range(settings.NEWS_COUNT_ON_HOME_PAGE + 1),
+                           k=(settings.NEWS_COUNT_ON_HOME_PAGE + 1))
+    day_indexes = sample(range(settings.NEWS_COUNT_ON_HOME_PAGE + 1),
+                         k=(settings.NEWS_COUNT_ON_HOME_PAGE + 1))
     today = datetime.today()
     many_news = News.objects.bulk_create(
         News(
-            title=f'Новость {index}',
+            title=f'Новость {title_indexes[index]}',
             text='Просто текст.',
-            date=today - timedelta(days=(
-                settings.NEWS_COUNT_ON_HOME_PAGE + 1
-            ) - index)
+            date=today - timedelta(days=day_indexes[index])
         )
         for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     )
@@ -98,34 +86,20 @@ def comment(news, author):
 
 
 @pytest.fixture
-def many_comments(news, author):
+def few_comments(news, author):
     """Создай несколько записей комментариев от автора к новости."""
     now = timezone.now()
-    for index in range(4):
+    number_of_comments = 4
+    day_indexes = sample(range(number_of_comments),
+                         k=number_of_comments)
+    for index in range(number_of_comments):
         comment = Comment.objects.create(
             news=news, author=author, text=f'Tекст {index}',
         )
-        comment.created = now - timedelta(days=index)
+        comment.created = now - timedelta(days=day_indexes[index])
         comment.save()
-        many_comments = Comment.objects.all()
-    return many_comments
-
-
-@pytest.fixture
-def news_id(news):
-    """Верни параметр id для записи новости."""
-    """
-    Для уважаемого ревьюера (3 из 3)
-    Дмитрий, вы написали:
-    'Лишнее. От самого news его id получается без какого-либо труда,
-    создавать отдельную фикстуру news_id вместо использования news.id
-    - не нужно'
-    Я и сам хотел её сразу убрать. Эта фикстура используется мной только
-    в test_pages_availability_for_anonymous_user в модуле test_routes.
-    Без 'ленивого' вызова этой фикстуры мне придётся делать
-    отдельный тест для 'news:detail'. Если есть третий путь - прошу подсказки.
-    """
-    return news.id,
+        few_comments = Comment.objects.all()
+    return few_comments
 
 
 @pytest.fixture
@@ -133,6 +107,30 @@ def news_url(news):
     """Верни url новости."""
     news_url = reverse('news:detail', args=(news.id,))
     return news_url
+
+
+@pytest.fixture
+def home_url():
+    """Верни url домоашней страницы."""
+    return reverse('news:home')
+
+
+@pytest.fixture
+def login_url():
+    """Верни url страницы входа."""
+    return reverse('users:login')
+
+
+@pytest.fixture
+def logout_url():
+    """Верни url страницы выхода."""
+    return reverse('users:logout')
+
+
+@pytest.fixture
+def signup_url():
+    """Верни url страницы регистрации."""
+    return reverse('users:signup')
 
 
 @pytest.fixture

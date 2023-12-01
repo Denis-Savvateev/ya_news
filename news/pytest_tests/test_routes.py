@@ -9,18 +9,17 @@ from pytest_django.asserts import assertRedirects
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'name, args',
+    'url',
     (
-        ('news:home', None),
-        ('news:detail', pytest.lazy_fixture('news_id'),),
-        ('users:login', None),
-        ('users:logout', None),
-        ('users:signup', None),
+        pytest.lazy_fixture('home_url'),
+        pytest.lazy_fixture('news_url'),
+        pytest.lazy_fixture('login_url'),
+        pytest.lazy_fixture('logout_url'),
+        pytest.lazy_fixture('signup_url'),
     )
 )
-def test_pages_availability_for_anonymous_user(client, name, args):
+def test_pages_availability_for_anonymous_user(client, url):
     """Проверь доступность для всех пользователей нужных страниц."""
-    url = reverse(name, args=args)
     response = client.get(url)
     assert response.status_code == HTTPStatus.OK
 

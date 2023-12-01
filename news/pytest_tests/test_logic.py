@@ -39,17 +39,20 @@ def test_user_can_create_comment(author_client, news, news_url, author):
     assert comment.author == author
 
 
-def test_user_cant_use_bad_words(author_client, news_url):
+@pytest.mark.parametrize(
+    'bad_word',
+    (bad_word for bad_word in BAD_WORDS)
+)
+def test_user_cant_use_bad_words(author_client, bad_word, news_url):
     """Проверь невозможность отправки дурных слов."""
-    for bad_word in BAD_WORDS:
-        bad_words_data = {'text': f'Какой-то текст, {bad_word}, еще текст'}
-        response = author_client.post(news_url, data=bad_words_data)
-        assertFormError(
-            response,
-            form='form',
-            field='text',
-            errors=WARNING
-        )
+    bad_words_data = {'text': f'Какой-то текст, {bad_word}, еще текст'}
+    response = author_client.post(news_url, data=bad_words_data)
+    assertFormError(
+        response,
+        form='form',
+        field='text',
+        errors=WARNING
+    )
 
 
 @pytest.mark.parametrize(
@@ -74,10 +77,8 @@ def test_user_can_delete_comment(
     comments = str(Comment.objects.all())
     if redirect:
         assertRedirects(response, redirect)
-    # comments_count = Comment.objects.count()
     if status:
         assert response.status_code == status
-    # assert comments_count == count
     table_status = (comments_before != comments)
     assert table_status == is_changed
 

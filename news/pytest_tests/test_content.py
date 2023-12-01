@@ -32,7 +32,7 @@ def test_news_order(client, many_news):
     assert all_dates == sorted_dates
 
 
-def test_comments_order(client, news, many_comments):
+def test_comments_order(client, news, few_comments):
     """Проверь сортировку комментариев на странице новости."""
     detail_url = reverse('news:detail', args=(news.id,))
     response = client.get(detail_url)
